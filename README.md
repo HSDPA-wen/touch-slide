@@ -2,8 +2,7 @@
 #
 调用方法
 #
-> slide({
-#
+slide({
 >        boxId:".slide-box",
 >        direction:"horizontal", // horizontal | vertical
 >        width:"100%",
@@ -13,4 +12,4 @@
 >        showNum:3,
 >        time:4,
 >        callback:function(i){}
->    });
+>});
