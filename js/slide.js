@@ -1,7 +1,6 @@
 /**
  * Created by liuwentao on 2015/5/14.
  */
-
 var events = ['touchstart','touchmove','touchend'];
 if (window.navigator.msPointerEnabled) events = ['MSPointerDown', 'MSPointerMove', 'MSPointerUp'];
 if (window.navigator.pointerEnabled) events = ['pointerdown', 'pointermove', 'pointerup'];
@@ -15,7 +14,6 @@ var touchSlide =function(option) {
     this.option = option;
     this.init(option);
 }
-
 touchSlide.DEFAULTS = {
     boxId:"",
     direction:"horizontal", // horizontal | vertical
@@ -27,30 +25,17 @@ touchSlide.DEFAULTS = {
     time:4,
     callback:function(i){}
 }
-
 touchSlide.prototype.init = function(option){
     this.option = this.extend(option , touchSlide.DEFAULTS);
     this.slideMove = 0;
     this.timer = null;
     this.dom = 0;
-
+    this.index = 0;
+    this.afterBox = null;
     var slideBox = document.querySelector(this.option.boxId);
     var slideUl =slideBox.getElementsByTagName("ul")[0];
     var slideLi = slideUl.querySelectorAll("ul li");
-    var pointBox = slideBox.getElementsByTagName("ol")[0];
-
-    this.afterBox = document.createElement("div");
-    this.afterBox.className = "after-box";
-    slideBox.appendChild(this.afterBox);
-
-    if(this.option.showNum < 1 || this.option.showNum > slideLi.length){
-        this.option.showNum = 1;
-    }
-
-    this.index = this.option.showNum-1;
-
-    this.setParameters(slideBox , slideUl ,slideLi,pointBox);
-    this.resize(slideBox,slideUl);
+    this.setParameters(slideBox , slideUl ,slideLi);
 }
 /* extend */
 touchSlide.prototype.extend = function _extend(options , defaultsOptions) {
@@ -71,62 +56,80 @@ touchSlide.prototype.extend = function _extend(options , defaultsOptions) {
     return options;
 };
 /*判断图片是否加载完成*/
-touchSlide .prototype.imgLoad=function(slideLi ,i ,slideUl, pointBox){
+touchSlide .prototype.imgLoad = function(slideLi ,i ){
     var arrImg = slideLi[i].querySelector("a img").getAttribute("data-src");
-    var _this=this;
     var img = new Image();
     img.onload = function () {
-        console.log(arrImg)
         slideLi[i].querySelector("a img").src = arrImg;
-        if(_this.option.showNum == i){
-
-        }
     }
     img.src = arrImg;
 }
-
 /*1.0s后加载其他帧图片*/
-touchSlide.prototype.loadAntherImg=function(slideLi ,slideUl, pointBox){
+touchSlide.prototype.loadAntherImg=function(slideLi ){
     var _this=this;
     setTimeout(function(){
         for(var i=0;i<slideLi.length;i++){
-            if(i != _this.option.showNum ){
+            if(i < _this.option.showNum-1 || i > _this.option.showNum+1){
                 _this.imgLoad(slideLi,i);
             }
         }
     },1000);
 }
-
 /*初始化设置*/
-touchSlide.prototype.setParameters = function(slideBox , slideUl , slideLi ,pointBox){
+touchSlide.prototype.setParameters = function(slideBox , slideUl , slideLi ){
+    //添加高度div
+    this.afterBox = document.createElement("div");
+    this.afterBox.className = "after-box";
+    slideBox.appendChild(this.afterBox);
     //宽度、高度的初始化
     this.setBoxSize(slideBox);
-    if(slideLi.length > 1) {
-        //li的初始化
-        var copySlideFirst = slideLi[0].cloneNode(true);
-        var copySlideLast = slideLi[slideLi.length-1].cloneNode(true);
-        slideUl.insertBefore(copySlideLast,slideLi[0]);
-        slideUl.appendChild(copySlideFirst);
-        slideLi = slideUl.querySelectorAll("ul li");
-        //显示帧初始化
-        pointBox.querySelectorAll("li")[this.index].className = "cur";
-        for(var i =0 ; i<slideLi.length ; i++ ){
-            this.cssChange(slideLi[i],this.slideMove* (i-1));
-        }
-        if(this.option.showNum != 1){
-            this.cssChange(slideUl,parseInt(-this.slideMove*(this.index)));
-            this.dom  = parseInt(-this.slideMove*this.index);
-        }
-        //加载显示帧以及前后各一帧图片
-        this.imgLoad(slideLi ,this.index+1,slideUl, pointBox);
-        this.touchShow(slideUl, pointBox);
-        if(this.option.autoSlide) this.timeAuto(slideUl, pointBox);
-        //加载其他帧图片
-        this.loadAntherImg(slideLi);
-    }else{
-        this.imgLoad(slideLi ,this.index , slideUl, pointBox);
-        slideBox.removeChild(pointBox);
+    //判断轮播图片是否小于等于1
+    if(slideLi.length <= 1) {
+        this.imgLoad(slideLi ,0);
+        return false;
     }
+    //添加pointBox
+    var pointBox = document.createElement("ol");
+    slideBox.appendChild(pointBox);
+    for(var point = 0; point < slideLi.length; point++){
+        var pointLi = document.createElement("li");
+        pointBox.appendChild(pointLi);
+    }
+    //判断输入显示图片帧的数值，正确与否
+    if(this.option.showNum < 1 || this.option.showNum > slideLi.length){
+        this.option.showNum = 1;
+    }
+    this.index = this.option.showNum-1;
+    //li的初始化
+    var copySlideFirst = slideLi[0].cloneNode(true);
+    var copySlideLast = slideLi[slideLi.length-1].cloneNode(true);
+    slideUl.insertBefore(copySlideLast,slideLi[0]);
+    slideUl.appendChild(copySlideFirst);
+    slideUl = slideBox.getElementsByTagName("ul")[0];
+    slideLi = slideUl.querySelectorAll("ul li");
+    //显示帧初始化
+    pointBox.querySelectorAll("li")[this.index].className = "cur";
+    for(var i =0 ; i<slideLi.length ; i++ ){
+        this.cssChange(slideLi[i],this.slideMove* (i-1));
+    }
+    if(this.option.showNum != 1){
+        this.cssChange(slideUl,parseInt(-this.slideMove*(this.index)));
+        this.dom  = parseInt(-this.slideMove*this.index);
+    }
+    //加载显示帧以及前后各一帧图片
+    this.imgLoad(slideLi ,this.option.showNum-1);
+    this.imgLoad(slideLi ,this.option.showNum+1);
+    this.imgLoad(slideLi ,this.option.showNum);
+    //触摸滚动，以及自动滚动
+    this.touchShow(slideUl, pointBox);
+    if(this.option.autoSlide) this.timeAuto(slideUl, pointBox);
+    //加载其他帧图片
+    this.loadAntherImg(slideLi);
+    if(this.option.callback){
+        this.option.callback(this.index);
+    }
+    //resize
+    this.resize(slideBox,slideUl);
 }
 /*设置轮播大小*/
 touchSlide.prototype.setBoxSize = function(slideBox){
@@ -150,39 +153,28 @@ touchSlide.prototype.setBoxSize = function(slideBox){
             this.slideMove = document.documentElement.clientHeight ;
         }
      }
-    this.slideMove = parseInt(this.slideMove);
 }
-
+/*触摸滚动*/
 touchSlide.prototype.touchShow = function(slideUl , pointBox){
     var _this = this;
     var start = 0;   //touchStart x/y
     var cur = 0;
     var move = 0;
-
     slideUl.addEventListener(touchEvents.touchStart,function(e){
         if(_this.option.autoSlide) clearInterval(_this.timer);
-        slideUl.style.transition = "all 0s ease 0s";
-        slideUl.style.webkitTransition = "all 0s ease 0s";
-        if(_this.option.direction == "horizontal"){
-            start= e.touches[0].pageX ;
-        }else if(_this.option.direction == "vertical"){
-            start= e.touches[0].pageY ;
-        }
+        slideUl.style.transition = "none";
+        slideUl.style.webkitTransition = "none";
+        start = _this.ePage(e);
     });
     slideUl.addEventListener(touchEvents.touchMove,function(e){
         // 禁止滑动事件
         e.preventDefault();
         // 手指拖拽DOM时的坐标
-        if(_this.option.direction == "horizontal"){
-            cur = e.touches[0].pageX ;
-        }else if(_this.option.direction == "vertical"){
-            cur = e.touches[0].pageY ;
-        }
+        cur= _this.ePage(e);
         // 总距离
         move = cur - start;
         _this.cssChange(slideUl,_this.dom+move);
     });
-
     slideUl.addEventListener(touchEvents.touchEnd,function(){
         if(Math.abs(move) > 50 ){
             _this.dom += move;
@@ -195,16 +187,22 @@ touchSlide.prototype.touchShow = function(slideUl , pointBox){
             }
         }
         _this.slideItem(slideUl , pointBox , _this.index ,pointLength );
-
         if(_this.option.autoSlide)  _this.timeAuto(slideUl,pointBox);
     });
 }
-
+touchSlide.prototype.ePage = function(e){
+    var pointTouch = 0;
+    if(this.option.direction == "horizontal"){
+        pointTouch= e.touches[0].pageX ;
+    }else if(this.option.direction == "vertical"){
+        pointTouch= e.touches[0].pageY ;
+    }
+    return pointTouch;
+}
 touchSlide.prototype.cssChange = function(obj,style){
     var cssValue = "";
     if(this.option.direction == "horizontal"){
         cssValue=style+"px,0,0";
-
     }else if(this.option.direction == "vertical"){
         cssValue = "0,"+style+"px,0";
     }
@@ -223,8 +221,8 @@ touchSlide.prototype.timeAuto=function(slideUl,pointBox){
             _this.index++;
         }
         if(_this.index==0){
-            slideUl.style.transition = "all 0s ease 0s";
-            slideUl.style.webkitTransition = "all 0s ease 0s";
+            slideUl.style.transition = "none";
+            slideUl.style.webkitTransition =  "none";
             _this.cssChange(slideUl,_this.slideMove);
         }
         _this.slideItem(slideUl , pointBox , _this.index ,pointLength );
@@ -247,7 +245,7 @@ touchSlide.prototype.slideItem = function(slideUl , pointBox , liIndex , pointLe
         this.option.callback(liIndex);
     }
 }
-
+//window resize
 touchSlide.prototype.resize = function(slideBox , slideUl){
     var _this = this;
     window.addEventListener("resize",function(){
@@ -260,7 +258,6 @@ touchSlide.prototype.resize = function(slideBox , slideUl){
         _this.dom  = -_this.slideMove*_this.index;
     });
 }
-
 var slide = function(option){
     var options = typeof option == 'object' && option;
     return new touchSlide(options);
