@@ -65,8 +65,6 @@ html {
     box-sizing: border-box;
     margin:0 auto;
     overflow:hidden;
-    -ms-scroll-snap-type: mandatory;
-    -ms-scroll-snap-points-x: snapInterval(0%, 100%);
 }
 .slide-box .after-box{
     content: "";
@@ -81,8 +79,6 @@ html {
     width:100%;
 }
 .slide-box ul{
-    -ms-scroll-snap-type: mandatory;
-    -ms-scroll-snap-points-x: snapInterval(0%, 100%);
     -webkit-transform: translate3d(0%,0,0);
     transform: translate3d(0%,0,0);
 }
