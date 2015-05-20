@@ -1,7 +1,9 @@
 # touch-slide
 #
 调用方法
+#
 > slide({
+#
 >        boxId:".slide-box",
 >        direction:"horizontal", // horizontal | vertical
 >        width:"100%",
